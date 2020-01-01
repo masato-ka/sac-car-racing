@@ -37,23 +37,22 @@ class VaeEnv(Env):
 #            spaces.Box(low=-20, high=20,shape=(15,), dtype=np.float32)
         self.action_space = wrapped_env.action_space
 
+
+    def _vae(self,observe):
+        observe = PIL.Image.fromarray(observe)
+        observe = observe.resize((64,64), resample=PIL.Image.BICUBIC)
+        tensor = transforms.ToTensor()(observe)
+        tensor.to(self.device)
+        z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1].to(self.device))
+        return z.detach().cpu().numpy()[0]
+
     def reset(self):
         observe = self._wrapped_env.reset()
-        o = PIL.Image.fromarray(observe)
-        o = o.resize((64,64), resample=PIL.Image.BICUBIC)
-        tensor = transforms.ToTensor()(o)
-        tensor.to(self.device)
-        z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1])
-        o = z.detach().cpu().numpy()[0]
-        return o
+        return self._vae(observe)
 
     def step(self, action):
          observe, reward, done, e_i = self._wrapped_env.step(action)
-         o = PIL.Image.fromarray(observe)
-         o = o.resize((64,64), resample=PIL.Image.BICUBIC)
-         tensor = transforms.ToTensor()(o)
-         z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1])
-         o = z.detach().cpu().numpy()[0]
+         o = self._vae(observe)
          return o, reward, done, e_i
 
     def render(self):
