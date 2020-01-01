@@ -21,9 +21,10 @@ def normalize(x, amin=0, amax=1):
 class VaeEnv(Env):
 
 
-    def __init__(self, wrapped_env, vae):
+    def __init__(self, wrapped_env, vae, device='cpu'):
         super(VaeEnv, self).__init__()
         n_command_history = 0
+        self.device = torch.device(device)
         self._wrapped_env = wrapped_env
         self.vae = vae
         self.z_size = 15
@@ -41,6 +42,7 @@ class VaeEnv(Env):
         o = PIL.Image.fromarray(observe)
         o = o.resize((64,64), resample=PIL.Image.BICUBIC)
         tensor = transforms.ToTensor()(o)
+        tensor.to(self.device)
         z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1])
         o = z.detach().cpu().numpy()[0]
         return o
