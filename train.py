@@ -2,6 +2,7 @@ import torch
 
 import gym
 
+from env.car_racing import CarRacing
 from env.vae_env import VaeEnv
 from vae.vae import VAE
 
@@ -16,12 +17,13 @@ image_channels = 3
 if __name__ == '__main__':
 
     model_path = 'vae.torch'
-
+    torch_device = 'cpu'
     vae = VAE(image_channels=image_channels, z_dim=VARIANTS_SIZE)
-    vae.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+    vae.load_state_dict(torch.load(model_path, map_location=torch.device(torch_device)))
+    vae.to(torch.device(torch_device))
     vae.eval()
 
-    env = gym.make('CarRacing-v0')
+    env =CarRacing()
     vae_env = VaeEnv(env, vae)
 
     model = SAC(MlpPolicy, vae_env, verbose=1)
