@@ -2,6 +2,7 @@ import PIL
 
 import torch
 import torch.nn.functional as F
+from gym.envs.box2d import CarRacing
 from torchvision import transforms
 import numpy as np
 from gym import Env, spaces
@@ -23,6 +24,7 @@ class VaeEnv(Env):
 
     def __init__(self, wrapped_env, vae, device='cpu'):
         super(VaeEnv, self).__init__()
+        isinstance(wrapped_env, CarRacing)
         n_command_history = 0
         self.device = torch.device(device)
         self._wrapped_env = wrapped_env
@@ -48,6 +50,10 @@ class VaeEnv(Env):
 
     def reset(self):
         observe = self._wrapped_env.reset()
+
+        #avoid zooming image
+        self._wrapped_env.t = 1.0
+        observe, _, _, _ = self._wrapped_env.step(self._wrapped_env.action_space.sample())
         return self._vae(observe)
 
     def step(self, action):
@@ -72,21 +78,3 @@ class VaeEnv(Env):
     def __str__(self):
         return super().__str__()
 
-
-
-if __name__ == '__main__':
-    import gym
-    env = gym.make('CarRacing-v0')
-
-    vae = VAE(image_channels=3, z_dim=15)
-    vae.load_state_dict(torch.load('../vae.torch', map_location=torch.device('cpu')))
-    vae.eval()
-
-    vae_env = VaeEnv(env, vae)
-    print(vae_env.observation_space.sample())
-    vae_env.reset()
-    action = vae_env.action_space.sample()
-    o, r, d, e = vae_env.step(action)
-    print(type(o))
-    print('{} {} {} {}'.format(o,r,d,e))
-    vae_env.close()
