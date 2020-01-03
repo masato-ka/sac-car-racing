@@ -23,7 +23,7 @@ if __name__ == '__main__':
     vae.to(torch.device(torch_device))
     vae.eval()
 
-    env = CarRacing()
+    env = gym.make('CarRacing-v0')
     vae_env = VaeEnv(env, vae, device=torch_device)
 
     model = SAC(MlpPolicy, vae_env, verbose=1)
