@@ -52,8 +52,8 @@ class VaeEnv(Env):
         observe = self._wrapped_env.reset()
 
         #avoid zooming image
-        self._wrapped_env.env.t = 1.0
-        observe, _, _, _ = self._wrapped_env.step(self._wrapped_env.action_space.sample())
+        #self._wrapped_env.env.t = 1.0
+        #observe, _, _, _ = self._wrapped_env.step(self._wrapped_env.action_space.sample())
         return self._vae(observe)
 
     def step(self, action):
