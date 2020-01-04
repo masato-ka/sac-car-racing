@@ -29,7 +29,7 @@ class VaeEnv(Env):
         self.device = torch.device(device)
         self._wrapped_env = wrapped_env
         self.vae = vae
-        self.z_size = 15
+        self.z_size = 30
         self.n_commands = 0
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
