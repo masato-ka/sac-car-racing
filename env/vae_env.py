@@ -1,14 +1,10 @@
 import PIL
 
 import torch
-import torch.nn.functional as F
-from gym.envs.box2d import CarRacing
+
 from torchvision import transforms
 import numpy as np
 from gym import Env, spaces
-
-from config import INPUT_DIM
-from vae.vae import VAE
 
 
 def normalize(x, amin=0, amax=1):
@@ -24,7 +20,6 @@ class VaeEnv(Env):
 
     def __init__(self, wrapped_env, vae, device='cpu'):
         super(VaeEnv, self).__init__()
-        isinstance(wrapped_env, CarRacing)
         self.device = torch.device(device)
         self._wrapped_env = wrapped_env
         self.vae = vae
