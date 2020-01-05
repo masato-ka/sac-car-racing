@@ -13,7 +13,7 @@ class UnFlatten(nn.Module):
 
 class VAE(nn.Module):
     def __init__(self, image_channels=3, h_dim=1024, z_dim=32):
-
+        self.z_dim = z_dim
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         super(VAE, self).__init__()
         self.encoder = nn.Sequential(
