@@ -1,3 +1,6 @@
+import time
+from functools import wraps
+
 import PIL
 
 import torch
@@ -13,6 +16,21 @@ def normalize(x, amin=0, amax=1):
     if xmin == xmax:
         return np.ones_like(x)
     return (amax - amin) * (x - xmin) / (xmax - xmin) + amin
+
+MAX_STEERING_DIFF = 0.15
+MAX_STEERING = 1
+MIN_STEERING = -1
+JERK_REWARD_WEIGHT = 0.0
+
+def calc_reward(done, e_i, action):
+    if done:
+        # penalize the agent for getting off the road fast
+        #print(e_i['speed'])
+        norm_throttle = (e_i['speed'] - 0) / (1 - 0)
+        return -10 - 5 * norm_throttle
+        # 1 per timesteps + throttle
+    throttle_reward = 0.1 * (e_i['speed'] / 10)
+    return 1 + throttle_reward
 
 
 class VaeEnv(Env):
@@ -32,7 +50,9 @@ class VaeEnv(Env):
                                             dtype=np.float32)
         self.action_history = [0.] * (self.n_command_history * self.n_commands)
 #            spaces.Box(low=-20, high=20,shape=(15,), dtype=np.float32)
-        self.action_space = wrapped_env.action_space
+        self.action_space =spaces.Box(low=np.array([-MAX_STEERING, -1]),
+                                      high=np.array([MAX_STEERING, 1]), dtype=np.float32)
+            #wrapped_env.action_space
 
     def _record_action(self, action):
 
@@ -50,7 +70,7 @@ class VaeEnv(Env):
         return z.detach().cpu().numpy()[0]
 
     def reset(self):
-        self.action_history= [0.] * (self.n_command_history * self.n_commands)
+        self.action_history = [0.] * (self.n_command_history * self.n_commands)
         observe = self._wrapped_env.reset()
         #avoid zooming image
         #self._wrapped_env.env.t = 1.0
@@ -60,11 +80,26 @@ class VaeEnv(Env):
         return oc
 
     def step(self, action):
-         self._record_action(action)
-         observe, reward, done, e_i = self._wrapped_env.step(action)
-         o = self._vae(observe)
-         oc = np.concatenate([o, np.asarray(self.action_history)], 0)
-         return oc, reward, done, e_i
+        #Convert from [-1, 1] to [0, 1]
+        t = (action[1] + 1) / 2
+        action[1] = (1 - t) * 0.1 + 0.5 * t
+
+        if self.n_command_history > 0:
+            prev_steering = self.action_history[-2]
+            max_diff = (MAX_STEERING_DIFF - 1e-5) * (MAX_STEERING - MIN_STEERING)
+            diff = np.clip(action[0] - prev_steering, -max_diff, max_diff)
+            action[0] = prev_steering + diff
+
+        self._record_action(action)
+        observe, reward, done, e_i = self._wrapped_env.step(action)
+        if np.math.fabs(e_i['cte']) > 2:
+            done = True
+        else:
+            done = False
+        reward = calc_reward(done, e_i, action)
+        o = self._vae(observe)
+        oc = np.concatenate([o, np.asarray(self.action_history)], 0)
+        return oc, reward, done, e_i
 
     def render(self):
         self._wrapped_env.render()
@@ -79,6 +114,26 @@ class VaeEnv(Env):
     @property
     def unwrapped(self):
         return self._wrapped_env.unwrapped
+
+    def jerk_penalty(self):
+        """
+        Add a continuity penalty to limit jerk.
+        :return: (float)
+        """
+        jerk_penalty = 0
+        if self.n_command_history > 1:
+            # Take only last command into account
+            for i in range(1):
+                steering = self.action_history[0, -2 * (i + 1)]
+                prev_steering = self.action_history[0, -2 * (i + 2)]
+                steering_diff = (prev_steering - steering) / (MAX_STEERING - MIN_STEERING)
+
+                if abs(steering_diff) > MAX_STEERING_DIFF:
+                    error = abs(steering_diff) - MAX_STEERING_DIFF
+                    jerk_penalty += JERK_REWARD_WEIGHT * (error ** 2)
+                else:
+                    jerk_penalty += 0
+        return jerk_penalty
 
     def __str__(self):
         return super().__str__()
