@@ -5,7 +5,8 @@ import torch
 from torchvision import transforms
 import numpy as np
 from gym import Env, spaces
-from config import MAX_THROTTLE, MIN_THROTTLE, MAX_STEERING_DIFF, MAX_STEERING, MIN_STEERING, JERK_REWARD_WEIGHT
+from config import MAX_THROTTLE, MIN_THROTTLE, MAX_STEERING_DIFF, MAX_STEERING, MIN_STEERING, JERK_REWARD_WEIGHT, \
+    CTE_ERROR, N_COMMAND_HISTORY
 
 
 def normalize(x, amin=0, amax=1):
@@ -27,7 +28,7 @@ class VaeEnv(Env):
         self.vae = vae
         self.z_size = vae.z_dim
         self.n_commands = 2
-        self.n_command_history = 10
+        self.n_command_history = N_COMMAND_HISTORY
         self.reward_callback = reward_callback
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
@@ -79,16 +80,17 @@ class VaeEnv(Env):
         self._record_action(action)
         observe, reward, done, e_i = self._wrapped_env.step(action)
 
-        if np.math.fabs(e_i['cte']) > 2:
-            done = True
-        else:
-            done = False
-        if self.reward_callback is not None:
-            reward = self.reward_callback(action, e_i, done)
-        o = self._vae(observe)
+        #Override Done event.
+        done = np.math.fabs(e_i['cte']) > CTE_ERROR
 
+        if self.reward_callback is not None:
+            #Override reward.
+            reward = self.reward_callback(action, e_i, done)
+        reward += self.jerk_penalty()
+        o = self._vae(observe)
         if self.n_command_history > 0:
             o = np.concatenate([o, np.asarray(self.action_history)], 0)
+
         return o, reward, done, e_i
 
     def render(self):
@@ -114,8 +116,8 @@ class VaeEnv(Env):
         if self.n_command_history > 1:
             # Take only last command into account
             for i in range(1):
-                steering = self.action_history[0, -2 * (i + 1)]
-                prev_steering = self.action_history[0, -2 * (i + 2)]
+                steering = self.action_history[-2 * (i + 1)]
+                prev_steering = self.action_history[-2 * (i + 2)]
                 steering_diff = (prev_steering - steering) / (MAX_STEERING - MIN_STEERING)
 
                 if abs(steering_diff) > MAX_STEERING_DIFF:
