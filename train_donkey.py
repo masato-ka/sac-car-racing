@@ -5,8 +5,8 @@ import gym_donkeycar
 import tensorflow as tf
 from stable_baselines import SAC
 
-from config import DONE_SPEED_WEIGHT, NORMAL_SPEED_WEIGHT
-from env.vae_env import VaeEnv, MIN_SPEED, MAX_SPEED
+from config import DONE_SPEED_WEIGHT, NORMAL_SPEED_WEIGHT,  MIN_SPEED, MAX_SPEED
+from env.vae_env import VaeEnv
 from vae.vae import VAE
 
 from stable_baselines.sac.policies import FeedForwardPolicy as SACPolicy

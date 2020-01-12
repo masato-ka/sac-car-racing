@@ -5,8 +5,6 @@ import torch
 from torchvision import transforms
 import numpy as np
 from gym import Env, spaces
-
-from train_donkey import calc_reward
 from config import MAX_SPEED, MIN_SPEED, MAX_STEERING_DIFF, MAX_STEERING, MIN_STEERING, JERK_REWARD_WEIGHT
 
 
