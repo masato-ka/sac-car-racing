@@ -18,18 +18,22 @@ def normalize(x, amin=0, amax=1):
     return (amax - amin) * (x - xmin) / (xmax - xmin) + amin
 
 MAX_STEERING_DIFF = 0.15
+MAX_SPEED = 0.6
+MIN_SPEED = 0.4
 MAX_STEERING = 1
 MIN_STEERING = -1
 JERK_REWARD_WEIGHT = 0.0
+DONE_SPEED_WEIGHT = 5
+NORMAL_SPEED_WEIGHT = 0.1
 
 def calc_reward(done, e_i, action):
     if done:
         # penalize the agent for getting off the road fast
         #print(e_i['speed'])
-        norm_throttle = (action[1] - 0.4) / (0.6 - 0)
-        return -10 - 5 * norm_throttle
+        norm_throttle = (action[1] - MIN_SPEED) / (MAX_SPEED- MIN_SPEED)
+        return -10 - DONE_SPEED_WEIGHT * norm_throttle
         # 1 per timesteps + throttle
-    throttle_reward = 0.1 * (action[1] / 0.6)
+    throttle_reward = NORMAL_SPEED_WEIGHT * (action[1] / MAX_SPEED)
     return 1 + throttle_reward
 
 
