@@ -26,10 +26,10 @@ def calc_reward(done, e_i, action):
     if done:
         # penalize the agent for getting off the road fast
         #print(e_i['speed'])
-        norm_throttle = (e_i['speed'] - 0) / (1 - 0)
+        norm_throttle = (action[1] - 0.4) / (0.6 - 0)
         return -10 - 5 * norm_throttle
         # 1 per timesteps + throttle
-    throttle_reward = 0.1 * (e_i['speed'] / 10)
+    throttle_reward = 0.1 * (action[1] / 0.6)
     return 1 + throttle_reward
 
 
@@ -46,7 +46,7 @@ class VaeEnv(Env):
         self.n_command_history = 10
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
-                                            shape=(self.z_size + self.n_commands * self.n_command_history, ),
+                                            shape=(self.z_size + (self.n_commands * self.n_command_history), ),
                                             dtype=np.float32)
         self.action_history = [0.] * (self.n_command_history * self.n_commands)
 #            spaces.Box(low=-20, high=20,shape=(15,), dtype=np.float32)
@@ -82,7 +82,7 @@ class VaeEnv(Env):
     def step(self, action):
         #Convert from [-1, 1] to [0, 1]
         t = (action[1] + 1) / 2
-        action[1] = (1 - t) * 0.1 + 0.5 * t
+        action[1] = (1 - t) * 0.1 + 0.6 * t
 
         if self.n_command_history > 0:
             prev_steering = self.action_history[-2]
@@ -98,8 +98,10 @@ class VaeEnv(Env):
             done = False
         reward = calc_reward(done, e_i, action)
         o = self._vae(observe)
-        oc = np.concatenate([o, np.asarray(self.action_history)], 0)
-        return oc, reward, done, e_i
+
+        if self.n_command_history > 0:
+            o = np.concatenate([o, np.asarray(self.action_history)], 0)
+        return o, reward, done, e_i
 
     def render(self):
         self._wrapped_env.render()
