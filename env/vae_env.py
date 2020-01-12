@@ -5,7 +5,7 @@ import torch
 from torchvision import transforms
 import numpy as np
 from gym import Env, spaces
-from config import MAX_SPEED, MIN_SPEED, MAX_STEERING_DIFF, MAX_STEERING, MIN_STEERING, JERK_REWARD_WEIGHT
+from config import MAX_THROTTLE, MIN_THROTTLE, MAX_STEERING_DIFF, MAX_STEERING, MIN_STEERING, JERK_REWARD_WEIGHT
 
 
 def normalize(x, amin=0, amax=1):
@@ -68,7 +68,7 @@ class VaeEnv(Env):
     def step(self, action):
         #Convert from [-1, 1] to [0, 1]
         t = (action[1] + 1) / 2
-        action[1] = (1 - t) * MIN_SPEED + MAX_SPEED * t
+        action[1] = (1 - t) * MIN_THROTTLE + MAX_THROTTLE * t
 
         if self.n_command_history > 0:
             prev_steering = self.action_history[-2]

@@ -5,7 +5,7 @@ import gym_donkeycar
 import tensorflow as tf
 from stable_baselines import SAC
 
-from config import CRASH_SPEED_WEIGHT, THROTTLE_REWARD_WEIGHT, MIN_SPEED, MAX_SPEED, REWARD_CRASH
+from config import CRASH_SPEED_WEIGHT, THROTTLE_REWARD_WEIGHT, MIN_THROTTLE, MAX_THROTTLE, REWARD_CRASH
 from env.vae_env import VaeEnv
 from vae.vae import VAE
 
@@ -33,9 +33,9 @@ def learning_callable(time):
 
 def calc_reward(action, e_i, done):
     if done:
-        norm_throttle = (action[1] - MIN_SPEED) / (MAX_SPEED- MIN_SPEED)
+        norm_throttle = (action[1] - MIN_THROTTLE) / (MAX_THROTTLE - MIN_THROTTLE)
         return REWARD_CRASH - CRASH_SPEED_WEIGHT * norm_throttle
-    throttle_reward = THROTTLE_REWARD_WEIGHT * (action[1] / MAX_SPEED)
+    throttle_reward = THROTTLE_REWARD_WEIGHT * (action[1] / MAX_THROTTLE)
     return 1 + throttle_reward
 
 if __name__ == '__main__':
