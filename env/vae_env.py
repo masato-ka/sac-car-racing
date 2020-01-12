@@ -84,7 +84,7 @@ class VaeEnv(Env):
         else:
             done = False
         if self.reward_callback is not None:
-            reward = calc_reward(action, e_i, done)
+            reward = self.reward_callback(action, e_i, done)
         o = self._vae(observe)
 
         if self.n_command_history > 0:

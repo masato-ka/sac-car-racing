@@ -23,6 +23,7 @@ class CustomSACPolicy(SACPolicy):
                                               layers=[32, 16],
                                               act_fun=tf.nn.elu,
                                               feature_extraction="mlp")
+
 def learning_callable(time):
     if time > 0.90:
         return 0.0005
@@ -50,5 +51,5 @@ if __name__ == '__main__':
     model = SAC(CustomSACPolicy, vae_env, verbose=1, batch_size=64, buffer_size=30000, learning_starts=300,
                 gradient_steps=300, train_freq=1, ent_coef='auto_0.1', learning_rate=0.0003)
 
-    model.learn(total_timesteps=5000, log_interval=1)
+    model.learn(total_timesteps=10000, log_interval=1)
     model.save('donkey4')
