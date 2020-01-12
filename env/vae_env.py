@@ -1,6 +1,3 @@
-import time
-from functools import wraps
-
 import PIL
 
 import torch
@@ -8,6 +5,9 @@ import torch
 from torchvision import transforms
 import numpy as np
 from gym import Env, spaces
+
+from train_donkey import calc_reward
+from config import MAX_SPEED, MIN_SPEED, MAX_STEERING_DIFF, MAX_STEERING, MIN_STEERING, JERK_REWARD_WEIGHT
 
 
 def normalize(x, amin=0, amax=1):
@@ -17,30 +17,12 @@ def normalize(x, amin=0, amax=1):
         return np.ones_like(x)
     return (amax - amin) * (x - xmin) / (xmax - xmin) + amin
 
-MAX_STEERING_DIFF = 0.15
-MAX_SPEED = 0.6
-MIN_SPEED = 0.4
-MAX_STEERING = 1
-MIN_STEERING = -1
-JERK_REWARD_WEIGHT = 0.0
-DONE_SPEED_WEIGHT = 5
-NORMAL_SPEED_WEIGHT = 0.1
-
-def calc_reward(done, e_i, action):
-    if done:
-        # penalize the agent for getting off the road fast
-        #print(e_i['speed'])
-        norm_throttle = (action[1] - MIN_SPEED) / (MAX_SPEED- MIN_SPEED)
-        return -10 - DONE_SPEED_WEIGHT * norm_throttle
-        # 1 per timesteps + throttle
-    throttle_reward = NORMAL_SPEED_WEIGHT * (action[1] / MAX_SPEED)
-    return 1 + throttle_reward
 
 
 class VaeEnv(Env):
 
 
-    def __init__(self, wrapped_env, vae, device='cpu'):
+    def __init__(self, wrapped_env, vae, device='cpu', reward_callback=None):
         super(VaeEnv, self).__init__()
         self.device = torch.device(device)
         self._wrapped_env = wrapped_env
@@ -48,6 +30,7 @@ class VaeEnv(Env):
         self.z_size = vae.z_dim
         self.n_commands = 2
         self.n_command_history = 10
+        self.reward_callback = reward_callback
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
                                             shape=(self.z_size + (self.n_commands * self.n_command_history), ),
@@ -87,7 +70,7 @@ class VaeEnv(Env):
     def step(self, action):
         #Convert from [-1, 1] to [0, 1]
         t = (action[1] + 1) / 2
-        action[1] = (1 - t) * 0.1 + 0.6 * t
+        action[1] = (1 - t) * MIN_SPEED + MAX_SPEED * t
 
         if self.n_command_history > 0:
             prev_steering = self.action_history[-2]
@@ -102,7 +85,8 @@ class VaeEnv(Env):
             done = True
         else:
             done = False
-        reward = calc_reward(done, e_i, action)
+        if self.reward_callback is not None:
+            reward = calc_reward(action, e_i, done)
         o = self._vae(observe)
 
         if self.n_command_history > 0:

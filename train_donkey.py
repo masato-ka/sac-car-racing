@@ -5,13 +5,11 @@ import gym_donkeycar
 import tensorflow as tf
 from stable_baselines import SAC
 
-from env.vae_env import VaeEnv
-from sac_net.custom_sac import SACWithVAE
+from config import DONE_SPEED_WEIGHT, NORMAL_SPEED_WEIGHT
+from env.vae_env import VaeEnv, MIN_SPEED, MAX_SPEED
 from vae.vae import VAE
 
 from stable_baselines.sac.policies import FeedForwardPolicy as SACPolicy
-from stable_baselines.sac.policies import MlpPolicy
-#from stable_baselines import SAC
 
 VARIANTS_SIZE = 32
 os.environ['DONKEY_SIM_PATH'] = f"/Applications/donkey_sim.app/Contents/MacOS/donkey_sim"
@@ -32,6 +30,13 @@ def learning_callable(time):
         return 0.0003
     return 0.0001
 
+def calc_reward(action, e_i, done):
+    if done:
+        norm_throttle = (action[1] - MIN_SPEED) / (MAX_SPEED- MIN_SPEED)
+        return -10 - DONE_SPEED_WEIGHT * norm_throttle
+    throttle_reward = NORMAL_SPEED_WEIGHT * (action[1] / MAX_SPEED)
+    return 1 + throttle_reward
+
 if __name__ == '__main__':
 
     model_path = 'vae-gr-100.torch'
@@ -41,12 +46,9 @@ if __name__ == '__main__':
     vae.to(torch.device(torch_device))
     vae.eval()
     env = gym.make('donkey-generated-roads-v0')
-    vae_env = VaeEnv(env, vae, device=torch_device)
-    #model = SAC(CustomSACPolicy, vae_env, verbose=1, batch_size=64, buffer_size=30000, learning_starts=300, ent_coef='auto_0.1', gradient_steps=600, train_freq=3000, learning_rate=0.0003)
+    vae_env = VaeEnv(env, vae, device=torch_device, reward_callback=calc_reward)
     model = SAC(CustomSACPolicy, vae_env, verbose=1, batch_size=64, buffer_size=30000, learning_starts=300,
                 gradient_steps=300, train_freq=1, ent_coef='auto_0.1', learning_rate=0.0003)
-    # model = SACWithVAE(CustomSACPolicy, vae_env, verbose=1, batch_size=64, buffer_size=30000, learning_starts=300,
-    #             gradient_steps=300, train_freq=6000, ent_coef='auto_0.1')
 
     model.learn(total_timesteps=5000, log_interval=1)
     model.save('donkey4')

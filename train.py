@@ -1,12 +1,9 @@
 import torch
 
 import gym
-from gym.envs.box2d import CarRacing
 
 from env.vae_env import VaeEnv
 from vae.vae import VAE
-
-import numpy as np
 
 from stable_baselines.sac.policies import MlpPolicy
 from stable_baselines import SAC
@@ -29,3 +26,5 @@ if __name__ == '__main__':
     model = SAC(MlpPolicy, vae_env, verbose=1)
     model.learn(total_timesteps=1000000, log_interval=10)
     model.save('car_racing')
+
+
