@@ -9,15 +9,6 @@ from config import MAX_THROTTLE, MIN_THROTTLE, MAX_STEERING_DIFF, MAX_STEERING, 
     CTE_ERROR, N_COMMAND_HISTORY
 
 
-def normalize(x, amin=0, amax=1):
-    xmax = x.max()
-    xmin = x.min()
-    if xmin == xmax:
-        return np.ones_like(x)
-    return (amax - amin) * (x - xmin) / (xmax - xmin) + amin
-
-
-
 class VaeEnv(Env):
 
 
@@ -36,7 +27,7 @@ class VaeEnv(Env):
                                             dtype=np.float32)
         self.action_history = [0.] * (self.n_command_history * self.n_commands)
 #            spaces.Box(low=-20, high=20,shape=(15,), dtype=np.float32)
-        self.action_space =spaces.Box(low=np.array([-MAX_STEERING, -1]),
+        self.action_space =spaces.Box(low=np.array([MIN_STEERING, -1]),
                                       high=np.array([MAX_STEERING, 1]), dtype=np.float32)
             #wrapped_env.action_space
 
@@ -98,7 +89,6 @@ class VaeEnv(Env):
 
     def close(self):
         self._wrapped_env.close()
-
 
     def seed(self, seed=None):
         return self._wrapped_env.seed(seed)

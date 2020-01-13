@@ -5,7 +5,7 @@ import gym_donkeycar
 import tensorflow as tf
 from stable_baselines import SAC
 
-from config import CRASH_SPEED_WEIGHT, THROTTLE_REWARD_WEIGHT, MIN_THROTTLE, MAX_THROTTLE, REWARD_CRASH
+from config import CRASH_REWARD_WEIGHT, THROTTLE_REWARD_WEIGHT, MIN_THROTTLE, MAX_THROTTLE, REWARD_CRASH
 from env.vae_env import VaeEnv
 from vae.vae import VAE
 
@@ -27,7 +27,7 @@ class CustomSACPolicy(SACPolicy):
 def calc_reward(action, e_i, done):
     if done:
         norm_throttle = (action[1] - MIN_THROTTLE) / (MAX_THROTTLE - MIN_THROTTLE)
-        return REWARD_CRASH - CRASH_SPEED_WEIGHT * norm_throttle
+        return REWARD_CRASH - (CRASH_REWARD_WEIGHT * norm_throttle)
     throttle_reward = THROTTLE_REWARD_WEIGHT * (action[1] / MAX_THROTTLE)
     return 1 + throttle_reward
 
@@ -48,6 +48,6 @@ if __name__ == '__main__':
     In gym_donkey, skip_frame parameter is 2 but modify to 1. 
     '''
     model = SAC(CustomSACPolicy, vae_env, verbose=1, batch_size=64, buffer_size=30000, learning_starts=300,
-                gradient_steps=200, train_freq=1, ent_coef='auto_0.1', learning_rate=0.0003)
+                gradient_steps=300, train_freq=1, ent_coef='auto_0.1', learning_rate=3e-4)
     model.learn(total_timesteps=10000, log_interval=1)
     model.save('donkey4')
