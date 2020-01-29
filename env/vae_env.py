@@ -44,6 +44,8 @@ class VaeEnv(Env):
         tensor = transforms.ToTensor()(observe)
         tensor.to(self.device)
         z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1].to(self.device))
+        #TODO o = self.vae.decode(z)
+
         return z.detach().cpu().numpy()[0]
 
     def reset(self):
@@ -81,7 +83,6 @@ class VaeEnv(Env):
         o = self._vae(observe)
         if self.n_command_history > 0:
             o = np.concatenate([o, np.asarray(self.action_history)], 0)
-
         return o, reward, done, e_i
 
     def render(self):
