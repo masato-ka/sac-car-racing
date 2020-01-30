@@ -6,7 +6,7 @@ from torchvision import transforms
 import numpy as np
 from gym import Env, spaces
 from config import MAX_THROTTLE, MIN_THROTTLE, MAX_STEERING_DIFF, MAX_STEERING, MIN_STEERING, JERK_REWARD_WEIGHT, \
-    CTE_ERROR, N_COMMAND_HISTORY
+    CTE_ERROR, N_COMMAND_HISTORY, ROI
 
 
 class VaeEnv(Env):
@@ -17,7 +17,7 @@ class VaeEnv(Env):
         self.device = torch.device(device)
         self._wrapped_env = wrapped_env
         self.vae = vae
-        self.z_size = vae.z_dim
+        self.z_size = 32
         self.n_commands = 2
         self.n_command_history = N_COMMAND_HISTORY
         self.reward_callback = reward_callback
@@ -39,14 +39,18 @@ class VaeEnv(Env):
             self.action_history.append(v)
 
     def _vae(self,observe):
-        observe = PIL.Image.fromarray(observe)
-        observe = observe.resize((64,64), resample=PIL.Image.BICUBIC)
-        tensor = transforms.ToTensor()(observe)
-        tensor.to(self.device)
-        z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1].to(self.device))
-        #TODO o = self.vae.decode(z)
-
-        return z.detach().cpu().numpy()[0]
+        # observe = PIL.Image.fromarray(observe)
+        # observe = observe.resize((64,64), resample=PIL.Image.BICUBIC)
+        # tensor = transforms.ToTensor()(observe)
+        # tensor.to(self.device)
+        # z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1].to(self.device))
+        # #TODO o = self.vae.decode(z)
+        r = ROI
+        observe = observe[int(r[1]):int(r[1] + r[3]), int(r[0]):int(r[0] + r[2])]
+        # Convert RGB to BGR
+        observe = observe[:, :, ::-1]
+        return self.vae.encode(observe)
+        #return z.detach().cpu().numpy()[0]
 
     def reset(self):
         self.action_history = [0.] * (self.n_command_history * self.n_commands)
@@ -56,7 +60,7 @@ class VaeEnv(Env):
         #observe, _, _, _ = self._wrapped_env.step(self._wrapped_env.action_space.sample())
         o = self._vae(observe)
         if self.n_command_history > 0:
-            o = np.concatenate([o, np.asarray(self.action_history)], 0)
+            o = np.concatenate([o[0], np.asarray(self.action_history)], 0)
         return o
 
     def step(self, action):
@@ -82,7 +86,7 @@ class VaeEnv(Env):
         reward += self.jerk_penalty()
         o = self._vae(observe)
         if self.n_command_history > 0:
-            o = np.concatenate([o, np.asarray(self.action_history)], 0)
+            o = np.concatenate([o[0], np.asarray(self.action_history)], 0)
         return o, reward, done, e_i
 
     def render(self):
