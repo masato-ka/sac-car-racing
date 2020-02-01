@@ -40,7 +40,7 @@ class VaeEnv(Env):
 
     def _vae(self,observe):
         observe = PIL.Image.fromarray(observe)
-        observe = observe.resize((64,64), resample=PIL.Image.BICUBIC)
+        #observe = observe.resize((64,64), resample=PIL.Image.BICUBIC)
         tensor = transforms.ToTensor()(observe)
         tensor.to(self.device)
         z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1].to(self.device))
