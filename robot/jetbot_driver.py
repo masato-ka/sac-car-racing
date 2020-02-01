@@ -1,4 +1,4 @@
-#from jetbot import Camera, bgr8_to_jpeg, Robot
+from jetbot import Camera, bgr8_to_jpeg, Robot
 import threading
 import time
 
@@ -85,5 +85,13 @@ class MobileController:
         else:
             self.right_v = self.speed
             self.left_v = self.speed
+
+
+if __name__ == '__main__':
+
+    jetbot = JetbotDriver()
+    while True:
+
+        jetbot.step()
 
 
