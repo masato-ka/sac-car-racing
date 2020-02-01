@@ -7,7 +7,6 @@ from stable_baselines import SAC
 
 from config import CRASH_REWARD_WEIGHT, THROTTLE_REWARD_WEIGHT, MIN_THROTTLE, MAX_THROTTLE, REWARD_CRASH
 from env.vae_env import VaeEnv
-from vae.controller import VAEController
 from vae.vae import VAE
 
 from stable_baselines.sac.policies import FeedForwardPolicy as SACPolicy
@@ -34,15 +33,12 @@ def calc_reward(action, e_i, done):
 
 if __name__ == '__main__':
 
-    model_path = 'vae-level-0-dim-32.pkl'
+    model_path = 'vae-gr-size-80-160-03.torch'
     torch_device = 'cpu'
-    #vae = VAE(image_channels=image_channels, z_dim=VARIANTS_SIZE)
-    #vae.load_state_dict(torch.load(model_path, map_location=torch.device(torch_device)))
-    #vae.to(torch.device(torch_device))
-    #vae.eval()
-    vae = VAEController(z_size=VARIANTS_SIZE)
-    vae.load(model_path)
-
+    vae = VAE(image_channels=image_channels, z_dim=VARIANTS_SIZE)
+    vae.load_state_dict(torch.load(model_path, map_location=torch.device(torch_device)))
+    vae.to(torch.device(torch_device))
+    vae.eval()
 
     env = gym.make('donkey-generated-roads-v0')
     vae_env = VaeEnv(env, vae, device=torch_device, reward_callback=calc_reward)
