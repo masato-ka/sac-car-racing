@@ -1,18 +1,18 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-
+import torchvision
 class Flatten(nn.Module):
     def forward(self, input):
         return input.view(input.size(0), -1)
 
 class UnFlatten(nn.Module):
     def forward(self, input, size=256):
-        return input.view(input.size(0), size, 5, 8)
-
+        return input.view(input.size(0), size, 3, 8)
+        torchvision.transforms.Crop
 
 class VAE(nn.Module):
-    def __init__(self, image_channels=3, h_dim=10240, z_dim=32):
+    def __init__(self, image_channels=3, h_dim=6144, z_dim=32):
         super(VAE, self).__init__()
         self.z_dim = z_dim
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -36,11 +36,11 @@ class VAE(nn.Module):
             UnFlatten(),
             nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, kernel_size=(5,4), stride=2),
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, kernel_size=(5,4), stride=2),
+            nn.ConvTranspose2d(64, 32, kernel_size=5, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(32, image_channels, kernel_size=(8,6), stride=2),
+            nn.ConvTranspose2d(32, image_channels, kernel_size=4, stride=2),
             nn.Sigmoid(),
         )
 
@@ -76,7 +76,7 @@ class VAE(nn.Module):
         KL = -0.5 * torch.mean(torch.sum(1 + torch.log(var) - mean**2 - var))
         #kld = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         y = self.decode(z)
-        reconstruction = F.binary_cross_entropy(y.view(-1,57600), x.view(-1, 57600), size_average=False)
+        reconstruction = F.binary_cross_entropy(y.view(-1,38400), x.view(-1, 38400), size_average=False)
         #reconstruction = torch.mean(torch.sum(x * torch.log(y) + (1 - x) * torch.log(1 - y)))
         #lower_bound = [-KL, reconstruction]
         return KL+reconstruction#-sum(lower_bound)
