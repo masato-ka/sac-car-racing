@@ -8,8 +8,6 @@ from gym import Env, spaces
 from config import MAX_THROTTLE, MIN_THROTTLE, MAX_STEERING_DIFF, MAX_STEERING, MIN_STEERING, JERK_REWARD_WEIGHT, \
     CTE_ERROR, N_COMMAND_HISTORY
 
-r = [0, 40, 160, 80]
-
 class VaeEnv(Env):
 
 
@@ -43,12 +41,8 @@ class VaeEnv(Env):
         observe = PIL.Image.fromarray(observe)
         #observe = observe.resize((64,64), resample=PIL.Image.BICUBIC)
         #observe.crop((0, 40, 160, 120))
-        #image =observe[int(r[1]):int(r[1] + r[3]), int(r[0]):int(r[0] + r[2])]
-        #image = image[:, :, ::-1]
-        #tensor = torch.from_numpy(image)
         tensor = transforms.ToTensor()(observe.crop((0, 40, 160, 120)))
         tensor.to(self.device)
-        #tensor = tensor.transpose(0, 1).transpose(0, 2)
         z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1].to(self.device))
         return z.detach().cpu().numpy()[0]
 
