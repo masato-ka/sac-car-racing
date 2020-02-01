@@ -1,7 +1,7 @@
 import PIL
+import cv2
 
 import torch
-
 from torchvision import transforms
 import numpy as np
 from gym import Env, spaces
@@ -39,21 +39,32 @@ class VaeEnv(Env):
         for v in action:
             self.action_history.append(v)
 
+    def _show_debugger(self, observe, z):
+        r = self.vae.decode(z)
+        r = r[0].transpose(0, 2).transpose(0, 1)
+        reconst = r.detach().cpu().numpy()[:,:,::-1]
+        #frame = cv2.vconcat([observe, reconst])
+        cv2.imshow('frame',reconst)
+        cv2.waitKey(1)
+
     def _vae(self,observe):
         observe = PIL.Image.fromarray(observe)
         #observe = observe.resize((64,64), resample=PIL.Image.BICUBIC)
         #observe.crop((0, 40, 160, 120))
         #image =observe[int(r[1]):int(r[1] + r[3]), int(r[0]):int(r[0] + r[2])]
         #image = image[:, :, ::-1]
-        #tensor = torch.from_numpy(image)
-        tensor = transforms.ToTensor()(observe.crop((0, 40, 160, 120)))
+        #tensor = torch.from_numpy(image.copy())
+        croped = observe.crop((0, 40, 160, 120))
+        tensor = transforms.ToTensor()(croped)
         tensor.to(self.device)
         #tensor = tensor.transpose(0, 1).transpose(0, 2)
         z, _, _ = self.vae.encode(torch.stack((tensor,tensor),dim=0)[:-1].to(self.device))
+        self._show_debugger(np.asarray(croped)[:,:,::-1], z)
         return z.detach().cpu().numpy()[0]
 
     def reset(self):
         self.action_history = [0.] * (self.n_command_history * self.n_commands)
+
         observe = self._wrapped_env.reset()
         #avoid zooming image
         #self._wrapped_env.env.t = 1.0

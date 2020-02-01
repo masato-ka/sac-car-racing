@@ -18,7 +18,7 @@ image_channels = 3
 
 if __name__ == '__main__':
 
-    model_path = 'vae-gr-100.torch'
+    model_path = 'vae-gr-size-80-160-03.torch'
     torch_device = 'cpu'
     vae = VAE(image_channels=image_channels, z_dim=VARIANTS_SIZE)
     vae.load_state_dict(torch.load(model_path, map_location=torch.device(torch_device)))
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     env = gym.make('donkey-generated-roads-v0')
     vae_env = VaeEnv(env, vae, device=torch_device)
 
-    model = SAC.load('donkey4')
+    model = SAC.load('donkey5')
 
     obs = vae_env.reset()
     dones=False

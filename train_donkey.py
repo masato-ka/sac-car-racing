@@ -48,6 +48,6 @@ if __name__ == '__main__':
     In gym_donkey, skip_frame parameter is 2 but modify to 1. 
     '''
     model = SAC(CustomSACPolicy, vae_env, verbose=1, batch_size=64, buffer_size=30000, learning_starts=300,
-                gradient_steps=600, train_freq=1, ent_coef='auto_0.1', learning_rate=3e-4)
-    model.learn(total_timesteps=10000, log_interval=1)
+                gradient_steps=300, train_freq=1, ent_coef='auto_0.1', learning_rate=3e-4)
+    model.learn(total_timesteps=15000, log_interval=1)
     model.save('donkey5')
