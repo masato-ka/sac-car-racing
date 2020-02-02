@@ -33,7 +33,7 @@ def calc_reward(action, e_i, done):
 
 if __name__ == '__main__':
 
-    model_path = 'vae-gr-size-80-160-80.torch'
+    model_path = 'vae-gr-size-80-160-64-new.torch'
     torch_device = 'cpu'
     vae = VAE(image_channels=image_channels, z_dim=VARIANTS_SIZE)
     vae.load_state_dict(torch.load(model_path, map_location=torch.device(torch_device)))

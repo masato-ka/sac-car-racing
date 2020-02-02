@@ -99,6 +99,8 @@ class VaeEnv(Env):
         if self.n_command_history > 0:
             o = np.concatenate([o, np.asarray(self.action_history)], 0)
 
+        if done:
+            self._wrapped_env.step(np.array([0.,0.]))
         return o, reward, done, e_i
 
     def render(self):
