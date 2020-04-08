@@ -11,9 +11,9 @@ from stable_baselines.sac.policies import MlpPolicy
 from stable_baselines import SAC
 
 VARIANTS_SIZE = 32
-os.environ['DONKEY_SIM_PATH'] = f"/Applications/donkey_sim.app/Contents/MacOS/donkey_sim"
-os.environ['DONKEY_SIM_PORT'] = str(9091)
-os.environ['DONKEY_SIM_HEADLESS'] = str(0)
+DONKEY_SIM_PATH = f"/Applications/donkey_sim.app/Contents/MacOS/sdsim"
+SIM_HOST="127.0.0.1"
+DONKEY_SIM_PORT=9091
 image_channels = 3
 
 if __name__ == '__main__':
@@ -25,10 +25,11 @@ if __name__ == '__main__':
     vae.to(torch.device(torch_device))
     vae.eval()
 
-    env = gym.make('donkey-generated-track-v0')
+    env = gym.make('donkey-generated-track-v0', exe_path=DONKEY_SIM_PATH, host=SIM_HOST, port=DONKEY_SIM_PORT)
+    env.viewer.set_car_config("donkey", (128, 128, 128), "masato-ka", 20)
     vae_env = VaeEnv(env, vae, device=torch_device)
 
-    model = SAC.load('donkey6')
+    model = SAC.load('donkey5')
 
     obs = vae_env.reset()
     dones=False

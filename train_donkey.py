@@ -12,9 +12,12 @@ from vae.vae import VAE
 from stable_baselines.sac.policies import FeedForwardPolicy as SACPolicy
 
 VARIANTS_SIZE = 32
-os.environ['DONKEY_SIM_PATH'] = f"/Applications/donkey_sim.app/Contents/MacOS/donkey_sim"
-os.environ['DONKEY_SIM_PORT'] = str(9091)
-os.environ['DONKEY_SIM_HEADLESS'] = str(0)
+DONKEY_SIM_PATH = f"/Applications/donkey_sim.app/Contents/MacOS/sdsim"
+SIM_HOST="127.0.0.1"
+DONKEY_SIM_PORT=9091
+#DONKEY_SIM_PATH = f"remote"
+#SIM_HOST = "trainmydonkey.com"
+
 image_channels = 3
 
 class CustomSACPolicy(SACPolicy):
@@ -33,14 +36,15 @@ def calc_reward(action, e_i, done):
 
 if __name__ == '__main__':
 
-    model_path = 'vae-gt-80-160-18k-beta25-300.torch'
+    model_path = 'vae-gt-80-160-18k-beta25-50-loss.torch'
     torch_device = 'cpu'
     vae = VAE(image_channels=image_channels, z_dim=VARIANTS_SIZE)
     vae.load_state_dict(torch.load(model_path, map_location=torch.device(torch_device)))
     vae.to(torch.device(torch_device))
     vae.eval()
-
-    env = gym.make('donkey-generated-track-v0')
+    #env = gym.make("donkey-warehouse-v0", exe_path=DONKEY_SIM_PATH, port=SIM_HOST)
+    env = gym.make('donkey-generated-track-v0',exe_path=DONKEY_SIM_PATH, host=SIM_HOST, port=DONKEY_SIM_PORT)
+    env.viewer.set_car_config("donkey", (128, 128, 128), "masato-ka", 20)
     vae_env = VaeEnv(env, vae, device=torch_device, reward_callback=calc_reward)
 
     '''
