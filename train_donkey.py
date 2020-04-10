@@ -36,7 +36,8 @@ def calc_reward(action, e_i, done):
 
 if __name__ == '__main__':
 
-    model_path = 'vae-gt-80-160-18k-beta25-50-loss.torch'
+    #model_path = 'vae-gt-80-160-18k-beta25-50-loss.torch'
+    model_path = 'vae-gt-30k-150.torch'
     torch_device = 'cpu'
     vae = VAE(image_channels=image_channels, z_dim=VARIANTS_SIZE)
     vae.load_state_dict(torch.load(model_path, map_location=torch.device(torch_device)))
@@ -54,4 +55,4 @@ if __name__ == '__main__':
     model = SAC(CustomSACPolicy, vae_env, verbose=1, batch_size=64, buffer_size=30000, learning_starts=300,
                 gradient_steps=600, train_freq=1, ent_coef='auto_0.1', learning_rate=3e-4)
     model.learn(total_timesteps=30000, log_interval=1)
-    model.save('donkey7')
+    model.save('donkey9')
